@@ -1,7 +1,8 @@
+# stop snmp proccess
+sudo systemctl stop snmpd
 
-# stop the agent
-#sudo systemctl stop snmpd
-service snmpd stop
+# enable snmp proccess at system startup
+sudo systemctl enable snmpd
 
 # backup the default configuration file
 sudo mv /etc/snmp/snmpd.conf /etc/snmp/snmpd.conf.bak
@@ -13,6 +14,5 @@ sudo cp snmp.conf /etc/snmp/
 # copy mib file to mibs directory
 sudo cp PROXY-SEC-MIB.txt /usr/share/snmp/mibs/
 
-# start the agent
-#sudo systemctl start snmpd
-service snmpd start
+# start snmp proccess
+sudo systemctl start snmpd
