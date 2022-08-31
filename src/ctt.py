@@ -4,7 +4,7 @@ import pickle
 class CTT:
     
     HEADER_SIZE = 8
-    BUFFER_SIZE = 12
+    BUFFER_SIZE = 1024
     
     # Envia a mensagem através do socket, anexando-lhe um cabeçalho que indica o seu tamanho
     def send_msg(msg, socket):
