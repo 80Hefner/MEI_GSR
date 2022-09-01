@@ -1,1 +1,0 @@
-# Manager SNMP configuration files
