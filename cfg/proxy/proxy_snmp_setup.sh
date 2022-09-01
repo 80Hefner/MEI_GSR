@@ -12,7 +12,7 @@ sudo cp snmpd.conf /etc/snmp/
 sudo cp snmp.conf /etc/snmp/
 
 # copy mib file to mibs directory
-sudo cp PROXY-SEC-MIB.txt /usr/share/snmp/mibs/
+sudo cp GSR2122-SEC-MIB.txt /usr/share/snmp/mibs/
 
 # start snmp proccess
 sudo systemctl start snmpd

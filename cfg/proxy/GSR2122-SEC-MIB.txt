@@ -1,0 +1,367 @@
+GSR2122-SEC-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+	private,
+	MODULE-IDENTITY,
+	OBJECT-TYPE,
+	NOTIFICATION-TYPE,
+	Opaque,
+	Unsigned32
+		FROM SNMPv2-SMI
+	OBJECT-GROUP,
+	NOTIFICATION-GROUP,
+	MODULE-COMPLIANCE
+		FROM SNMPv2-CONF;
+
+gsr2122 MODULE-IDENTITY
+	LAST-UPDATED "202208311503Z"	-- Aug 31, 2022, 3:03:00 PM
+	ORGANIZATION "GSR2122"
+	CONTACT-INFO
+		"None"
+	DESCRIPTION
+		"Module for GSR 21-22"
+	REVISION "202208311503Z"	-- Aug 31, 2022, 3:03:00 PM
+	DESCRIPTION
+		"Initial version."
+	-- 1.3.6.1.4.101
+	::= { private 101 }
+
+
+-- Scalars and Tables
+--
+
+gsr2122Objects OBJECT IDENTIFIER
+	-- 1.3.6.1.4.101.1
+	::= { gsr2122 1 }
+
+testObject OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"teste"
+	::= { gsr2122Objects 4 }
+
+operationsTable OBJECT-TYPE
+	SYNTAX  SEQUENCE OF OperationsTableEntry
+	MAX-ACCESS not-accessible
+	STATUS  current
+	DESCRIPTION
+		"Esta tabela e usada para gerir operacoes requisitadas por um gestor"
+	-- 1.3.6.1.4.101.1.1
+	::= { gsr2122Objects 1 }
+
+
+operationsTableEntry OBJECT-TYPE
+	SYNTAX  OperationsTableEntry
+	MAX-ACCESS not-accessible
+	STATUS  current
+	DESCRIPTION
+		"Entrada na tabela de operacoes do proxy"
+	INDEX {
+		idOper }
+	-- 1.3.6.1.4.101.1.1.1
+	::= { operationsTable 1 }
+
+
+OperationsTableEntry ::= SEQUENCE {
+
+	idOper        Unsigned32,
+	typeOper      INTEGER,
+	idSource      OCTET STRING,
+	idDestination OCTET STRING,
+	oidArg        OBJECT IDENTIFIER,
+	valueArg      Opaque,
+	typeArg       INTEGER,
+	sizeArg       Unsigned32 }
+
+
+idOper OBJECT-TYPE
+	SYNTAX  Unsigned32
+	MAX-ACCESS not-accessible
+	STATUS  current
+	DESCRIPTION
+		"Identificador da operacao recebida pelo agente proxy. Serve como chave da tabela"
+	-- 1.3.6.1.4.101.1.1.1.1
+	::= { operationsTableEntry 1 }
+
+
+typeOper OBJECT-TYPE
+	SYNTAX  INTEGER {
+				get(1),
+				getnext(2)
+			}
+	MAX-ACCESS read-only
+	STATUS  current
+	DESCRIPTION
+		"Identificador do tipo de operacao a ser executada"
+	-- 1.3.6.1.4.101.1.1.1.1.2
+	::= { operationsTableEntry 2 }
+
+
+idSource OBJECT-TYPE
+	SYNTAX  OCTET STRING (SIZE (0..255))
+	MAX-ACCESS read-only
+	STATUS  current
+	DESCRIPTION
+		"Alias identificativo da fonte do pedido (gestor)"
+	-- 1.3.6.1.4.101.1.1.1.1.3
+	::= { operationsTableEntry 3 }
+
+
+idDestination OBJECT-TYPE
+	SYNTAX  OCTET STRING (SIZE (0..255))
+	MAX-ACCESS read-only
+	STATUS  current
+	DESCRIPTION
+		"Alias identificativo do destino do pedido e onde a operacao sera executada (agente SNPv2c)"
+	-- 1.3.6.1.4.101.1.1.1.1.4
+	::= { operationsTableEntry 4 }
+
+
+oidArg OBJECT-TYPE
+	SYNTAX  OBJECT IDENTIFIER
+	MAX-ACCESS read-only
+	STATUS  current
+	DESCRIPTION
+		"Object Identifier do objecto da MIB que e argumento da operacao"
+	-- 1.3.6.1.4.101.1.1.1.1.5
+	::= { operationsTableEntry 5 }
+
+
+valueArg OBJECT-TYPE
+	SYNTAX  Opaque
+	MAX-ACCESS read-write
+	STATUS  current
+	DESCRIPTION
+		"Resultado da operacao executada no agente SNMPv2c.
+		Esta entrada da tabela e do tipo Opaque e sera necessario aceder a coluna 'typeArg'
+		para saber o seu tipo e a 'sizeArg' para saber o seu tamanho"
+	-- 1.3.6.1.4.101.1.1.1.1.6
+	::= { operationsTableEntry 6 }
+
+
+typeArg OBJECT-TYPE
+	SYNTAX  INTEGER {
+				none(0),
+				integer(1),
+				string(2)
+			}
+	MAX-ACCESS read-write
+	STATUS  current
+	DESCRIPTION
+		"Identificador sequencial do tipo de dados de 'valueArg'"
+	DEFVAL { 0 }
+	-- 1.3.6.1.4.101.1.1.1.1.7
+	::= { operationsTableEntry 7 }
+
+
+sizeArg OBJECT-TYPE
+	SYNTAX  Unsigned32
+	MAX-ACCESS read-write
+	STATUS  current
+	DESCRIPTION
+		"Tamanho em bytes de 'valueArg'.
+		Enquanto o valor da operacao nao for retornado, esta entrada devera ser igual a zero"
+	DEFVAL { 0 }
+	-- 1.3.6.1.4.101.1.1.1.1.8
+	::= { operationsTableEntry 8 }
+
+
+agentsTable OBJECT-TYPE
+	SYNTAX  SEQUENCE OF AgentsTableEntry
+	MAX-ACCESS not-accessible
+	STATUS  current
+	DESCRIPTION
+		"Esta tabela e usada para guardar as informacoes dos agentes remotos"
+	-- 1.3.6.1.4.101.1.2
+	::= { gsr2122Objects 2 }
+
+
+agentsTableEntry OBJECT-TYPE
+	SYNTAX  AgentsTableEntry
+	MAX-ACCESS not-accessible
+	STATUS  current
+	DESCRIPTION
+		"Entrada na tabela dos agentes remotos do proxy"
+	INDEX {
+		agentAlias }
+	-- 1.3.6.1.4.101.1.2.1
+	::= { agentsTable 1 }
+
+
+AgentsTableEntry ::= SEQUENCE {
+
+	agentAlias   OCTET STRING,
+	agentAddress OCTET STRING,
+	agentCS      OCTET STRING }
+
+
+agentAlias OBJECT-TYPE
+	SYNTAX  OCTET STRING (SIZE (0..64))
+	MAX-ACCESS not-accessible
+	STATUS  current
+	DESCRIPTION
+		"Alias identificativo do agente"
+	-- 1.3.6.1.4.101.1.2.1.1
+	::= { agentsTableEntry 1 }
+
+
+agentAddress OBJECT-TYPE
+	SYNTAX  OCTET STRING (SIZE (0..255))
+	MAX-ACCESS read-write
+	STATUS  current
+	DESCRIPTION
+		"Endereco IP + porta UDP associados ao agente"
+	-- 1.3.6.1.4.101.1.2.1.2
+	::= { agentsTableEntry 2 }
+
+
+agentCS OBJECT-TYPE
+	SYNTAX  OCTET STRING (SIZE (0..255))
+	MAX-ACCESS read-only
+	STATUS  current
+	DESCRIPTION
+		"Community string associada ao agente"
+	-- 1.3.6.1.4.101.1.2.1.3
+	::= { agentsTableEntry 3 }
+
+
+managersTable OBJECT-TYPE
+	SYNTAX  SEQUENCE OF ManagersTableEntry
+	MAX-ACCESS not-accessible
+	STATUS  current
+	DESCRIPTION
+		"Esta tabela e usada para guardar as informacoes dos gestores"
+	-- 1.3.6.1.4.101.1.3
+	::= { gsr2122Objects 3 }
+
+
+managersTableEntry OBJECT-TYPE
+	SYNTAX  ManagersTableEntry
+	MAX-ACCESS not-accessible
+	STATUS  current
+	DESCRIPTION
+		"Entrada na tabela dos gestores do proxy"
+	INDEX {
+		managerAlias }
+	-- 1.3.6.1.4.101.1.3.1
+	::= { managersTable 1 }
+
+
+ManagersTableEntry ::= SEQUENCE {
+
+	managerAlias  OCTET STRING,
+	managerAddress OCTET STRING,
+	managerCS     OCTET STRING }
+
+
+managerAlias OBJECT-TYPE
+	SYNTAX  OCTET STRING (SIZE (0..64))
+	MAX-ACCESS not-accessible
+	STATUS  current
+	DESCRIPTION
+		"Alias identificativo do gestor"
+	-- 1.3.6.1.4.101.1.3.1.1
+	::= { managersTableEntry 1 }
+
+
+managerAddress OBJECT-TYPE
+	SYNTAX  OCTET STRING (SIZE (0..255))
+	MAX-ACCESS read-write
+	STATUS  current
+	DESCRIPTION
+		"Endereco IP + porta UDP associados ao gestor"
+	-- 1.3.6.1.4.101.1.3.1.2
+	::= { managersTableEntry 2 }
+
+
+managerCS OBJECT-TYPE
+	SYNTAX  OCTET STRING (SIZE (0..255))
+	MAX-ACCESS read-only
+	STATUS  current
+	DESCRIPTION
+		"Community string associada ao gestor"
+	-- 1.3.6.1.4.101.1.3.1.3
+	::= { managersTableEntry 3 }
+
+
+-- Notification Types
+--
+
+gsr2122Events OBJECT IDENTIFIER 
+	-- 1.3.6.1.4.101.2
+	::= { gsr2122 2 }
+
+gsr2122NotificationTrap NOTIFICATION-TYPE
+	STATUS current
+	DESCRIPTION
+		"This is a notification event"
+	-- 1.3.6.1.4.101.2.1
+	::= { gsr2122Events 1 }
+
+-- Conformance
+--
+
+gsr2122Conf OBJECT IDENTIFIER 
+	-- 1.3.6.1.4.101.3
+	::= { gsr2122 3 }
+
+-- Groups
+--
+
+gsr2122Groups OBJECT IDENTIFIER 
+	-- 1.3.6.1.4.101.3.1
+	::= { gsr2122Conf 1 }
+
+gsr2122BasicGroup OBJECT-GROUP
+	OBJECTS {
+		typeOper,
+		idSource,
+		idDestination,
+		oidArg,
+		valueArg,
+		typeArg,
+		sizeArg,
+		agentAddress,
+		agentCS,
+		managerAddress,
+		managerCS,
+		testObject }
+	STATUS current
+	DESCRIPTION
+		"Basic objects."
+	-- 1.3.6.1.4.101.3.1.1
+	::= { gsr2122Groups 1 }
+
+gsr2122BasicEvents NOTIFICATION-GROUP
+	NOTIFICATIONS {
+		gsr2122NotificationTrap
+	}
+	STATUS current
+	DESCRIPTION
+		"Basic notifications."
+	-- 1.3.6.1.4.101.3.1.2
+	::= { gsr2122Groups 2 }
+
+-- Compliances
+--
+
+gsr2122Compliances OBJECT IDENTIFIER 
+	-- 1.3.6.1.4.101.3.2
+	::= { gsr2122Conf 2 }
+
+gsr2122Compliance  MODULE-COMPLIANCE
+	STATUS     current
+	DESCRIPTION
+		"Compliance statement for the the entities in this MIB."
+	MODULE
+	MANDATORY-GROUPS {
+		gsr2122BasicGroup,
+		gsr2122BasicEvents
+	}
+	-- 1.3.6.1.4.101.3.2.1
+	::= { gsr2122Compliances 1 }
+
+
+END
