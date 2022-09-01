@@ -1,5 +1,6 @@
 import socket
 from ctt import CTT, ManagerRequest, ProxyResponse
+from mibsec import OperationEntryValue
 
 class Manager:
 
@@ -7,6 +8,8 @@ class Manager:
         self.SERVER_IP = '10.0.1.20'
         self.SERVER_PORT = 65432
         self.socket = None
+        #TODO guardar mais informação nas operations
+        self.operations = []
     
     # Apresenta o menu e recebe o input do manager
     def menu(self):
@@ -32,47 +35,78 @@ class Manager:
     
     # Processa o pedido do manager para obter os resultados dos requests anteriores
     def process_get_results(self):
-        print('GET RESULTS') #TODO
+
+        # Obter input do manager, até ser inserido um número inteiro
+        while True:
+            try:
+                operation_id = int(input('Insira o ID da operação a consultar: '))
+                break
+            except ValueError:
+                print('[ERROR] Input inválido. Insira um número inteiro.')
+        
+        # Enviar pedido para o proxy
+        request = ManagerRequest(type= ManagerRequest.RESPONSE,
+                                 operation_id= operation_id)
+        CTT.send_msg(request, self.socket)
+
+        # Esperar pela resposta do proxy
+        response = CTT.recv_msg(self.socket)
+
+        if response.type == ProxyResponse.REQUEST_RESULT_FAIL:
+            print(f'[ERROR] {response.data}')
+        elif response.type == ProxyResponse.REQUEST_RESULT:
+            operation_entry = response.data
+            print(str(operation_entry))
+
 
     # Processa o pedido do manager para executar um get request
     def process_get_request(self):
         
-        target_ip = input("Insira IP do agent: ")
-        oids = input("Insira os oids (separados por espaços): ").split(" ")
-        community_string = input("Insira a community string: ")
+        # Obter input do manager
+        target_ip = input('Insira IP do agent: ')
+        oids = input('Insira os oids (separados por espaços): ').split(' ')
+        community_string = input('Insira a community string: ')
 
-        request = ManagerRequest(ManagerRequest.GET_REQUEST, target_ip, oids, community_string)
+        # Enviar pedido para o proxy
+        request = ManagerRequest(type= ManagerRequest.GET_REQUEST,
+                                 target_ip= target_ip,
+                                 oids= oids,
+                                 community_string= community_string)
         CTT.send_msg(request, self.socket)
 
-        # TODO guardar na MIB
-        response = CTT.recv_msg(self.socket)
+        # Esperar pelos ACKs vindos do proxy, que indicam o ID de cada operação executada
+        for _ in range(len(oids)):
+            ack = CTT.recv_msg(self.socket)
+            if (ack.type == ProxyResponse.REQUEST_ACK):
+                self.operations.append(ack.data)
+                print(f'Recebido ACK da operação com ID: {ack.data}')
 
-        if (response.success):
-            print(f'[DEBUG]: recebido -> {response.result}')
-        else:
-            print(f'[ERR] {response.result}')
 
     # Processa o pedido do manager para executar um getnext request
     def process_get_next_request(self):
 
-        target_ip = input("Insira IP do agent: ")
-        oids = input("Insira os oids (separados por espaços): ").split(" ")
-        community_string = input("Insira a community string: ")
+        # Obter input do manager
+        target_ip = input('Insira IP do agent: ')
+        oids = input('Insira os oids (separados por espaços): ').split(' ')
+        community_string = input('Insira a community string: ')
 
-        request = ManagerRequest(ManagerRequest.GETNEXT_REQUEST, target_ip, oids, community_string)
+        # Enviar pedido para o proxy
+        request = ManagerRequest(type= ManagerRequest.GETNEXT_REQUEST,
+                                 target_ip= target_ip,
+                                 oids= oids,
+                                 community_string= community_string)
         CTT.send_msg(request, self.socket)
 
-        # TODO guardar na MIB
-        response = CTT.recv_msg(self.socket)
-
-        if (response.success):
-            print(f'[DEBUG]: recebido -> {response.result}')
-        else:
-            print(f'[ERR] {response.result}')
+        # Esperar pelos ACKs vindos do proxy, que indicam o ID de cada operação executada
+        for _ in range(len(oids)):
+            ack = CTT.recv_msg(self.socket)
+            if (ack.type == ProxyResponse.REQUEST_ACK):
+                self.operations.append(ack.data)
+                print(f'Recebido ACK da operação com ID: {ack.data}')
 
     # Processa o pedido do manager para se desconectar do proxy
     def process_disconnect(self):
-        request = ManagerRequest(ManagerRequest.DISCONNECT)
+        request = ManagerRequest(type= ManagerRequest.DISCONNECT)
         CTT.send_msg(request, self.socket)
         
         self.socket.close()
@@ -102,6 +136,9 @@ class Manager:
 
         except KeyboardInterrupt:
             print('\nExecução interrompida.')
+        
+        except ConnectionRefusedError:
+            print('[ERROR] Proxy indisponível.')
 
 manager = Manager()
 manager.run()
