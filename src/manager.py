@@ -1,5 +1,5 @@
 import socket
-from ctt import CTT
+from ctt import CTT, ManagerRequest, ProxyResponse
 
 class Manager:
 
@@ -30,17 +30,53 @@ class Manager:
         
         return option
     
-    # Processa o pedido do manager para obter os resultados dos rerquests anteriores
+    # Processa o pedido do manager para obter os resultados dos requests anteriores
     def process_get_results(self):
         print('GET RESULTS') #TODO
 
     # Processa o pedido do manager para executar um get request
     def process_get_request(self):
-        print('GET REQUEST') #TODO
+        
+        target_ip = input("Insira IP do agent: ")
+        oids = input("Insira os oids (separados por espaços): ").split(" ")
+        community_string = input("Insira a community string: ")
+
+        request = ManagerRequest(ManagerRequest.GET_REQUEST, target_ip, oids, community_string)
+        CTT.send_msg(request, self.socket)
+
+        # TODO guardar na MIB
+        response = CTT.recv_msg(self.socket)
+
+        if (response.success):
+            print(f'[DEBUG]: recebido -> {response.result}')
+        else:
+            print(f'[ERR] {response.result}')
 
     # Processa o pedido do manager para executar um getnext request
     def process_get_next_request(self):
-        print('GET NEXT REQUEST') #TODO
+
+        target_ip = input("Insira IP do agent: ")
+        oids = input("Insira os oids (separados por espaços): ").split(" ")
+        community_string = input("Insira a community string: ")
+
+        request = ManagerRequest(ManagerRequest.GETNEXT_REQUEST, target_ip, oids, community_string)
+        CTT.send_msg(request, self.socket)
+
+        # TODO guardar na MIB
+        response = CTT.recv_msg(self.socket)
+
+        if (response.success):
+            print(f'[DEBUG]: recebido -> {response.result}')
+        else:
+            print(f'[ERR] {response.result}')
+
+    # Processa o pedido do manager para se desconectar do proxy
+    def process_disconnect(self):
+        request = ManagerRequest(ManagerRequest.DISCONNECT)
+        CTT.send_msg(request, self.socket)
+        
+        self.socket.close()
+
 
     # Execução do manager
     def run(self):
@@ -61,6 +97,7 @@ class Manager:
                 elif option == 3:
                     self.process_get_next_request()
                 elif option == 0:
+                    self.process_disconnect()
                     break
 
         except KeyboardInterrupt:
