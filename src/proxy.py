@@ -1,5 +1,6 @@
 import socket
 from pysnmp import hlapi
+from mibsec import MIBSec
 from proxy_worker import ProxyWorker
 
 class Proxy:
@@ -10,6 +11,9 @@ class Proxy:
         self.SERVER_PORT = 65432
     
     def run(self):
+
+        # Inicializar a MIBSec
+        mib_sec = MIBSec()
 
         # Inicializar o servidor que irá comunicar com o manager
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,7 +28,7 @@ class Proxy:
                 print('[PROXY SERVER] Conexão aceite. {0}'.format(addr))
 
                 # Criar thread responsável pela comunicação com o manager
-                worker = ProxyWorker(client_socket, addr)
+                worker = ProxyWorker(client_socket, addr, mib_sec)
                 worker.daemon = True
                 worker.start()
 

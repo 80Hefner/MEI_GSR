@@ -3,9 +3,13 @@ import pickle
 
 class ProxyResponse:
 
-    def __init__(self, result, success = True):
-        self.result = result
-        self.success = success
+    REQUEST_ACK = 1
+    REQUEST_RESULT = 2
+    REQUEST_RESULT_FAIL = 3
+
+    def __init__(self, type, data):
+        self.type = type
+        self.data = data
 
 class ManagerRequest:
 
@@ -14,11 +18,12 @@ class ManagerRequest:
     GETNEXT_REQUEST = 3
     DISCONNECT = 0
 
-    def __init__(self, type, target_ip = '', oids = [], community_string = ''):
+    def __init__(self, type, target_ip = '', oids = [], community_string = '', operation_id = 0):
         self.type = type
         self.target_ip = target_ip
         self.oids = oids
         self.community_string = community_string
+        self.operation_id = operation_id
 
 class CTT:
     
