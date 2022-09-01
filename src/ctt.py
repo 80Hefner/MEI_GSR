@@ -1,6 +1,25 @@
 import socket
 import pickle
 
+class ProxyResponse:
+
+    def __init__(self, result, success = True):
+        self.result = result
+        self.success = success
+
+class ManagerRequest:
+
+    RESPONSE = 1
+    GET_REQUEST = 2
+    GETNEXT_REQUEST = 3
+    DISCONNECT = 0
+
+    def __init__(self, type, target_ip = '', oids = [], community_string = ''):
+        self.type = type
+        self.target_ip = target_ip
+        self.oids = oids
+        self.community_string = community_string
+
 class CTT:
     
     HEADER_SIZE = 8
