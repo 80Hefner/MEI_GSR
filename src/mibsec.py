@@ -1,7 +1,4 @@
 
-from ctt import ManagerRequest
-
-
 class MIBSec:
     #TODO implementar locks e assim
 
@@ -12,10 +9,8 @@ class MIBSec:
     TYPEOPER_GET = 1
     TYPEOPER_GETNEXT = 2
 
-    def __init__(self):
-        self.operations_dict = {}
-        self.agents_dict = {}
-        self.managers_dict = {}
+    def __init__(self, operations_dict={}):
+        self.operations_dict = operations_dict
 
     def new_operation(self, idOper, typeOper, idSrc, idDest, oidArg):
         operation_entry_value = OperationEntryValue(typeOper, idSrc, idDest, oidArg)

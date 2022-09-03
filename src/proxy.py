@@ -1,5 +1,5 @@
 import socket
-from pysnmp import hlapi
+import encryption
 from mibsec import MIBSec
 from proxy_worker import ProxyWorker
 
