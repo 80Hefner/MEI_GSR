@@ -1,15 +1,17 @@
 import socket
-from ctt import CTT, ManagerRequest, ProxyResponse
-from mibsec import OperationEntryValue
+import encryption
+from ctt import CTT, Packet
 
 class Manager:
 
     def __init__(self):
-        self.SERVER_IP = '10.0.1.20'
-        self.SERVER_PORT = 65432
+        self.PROXY_IP = '10.0.1.20'
+        self.PROXY_PORT = 65432
         self.socket = None
         #TODO guardar mais informação nas operations
         self.operations = []
+        self.shared_cipher_key = None
+        self.shared_hmac_key = None
     
     # Apresenta o menu e recebe o input do manager
     def menu(self):
@@ -45,19 +47,17 @@ class Manager:
                 print('[ERROR] Input inválido. Insira um número inteiro.')
         
         # Enviar pedido para o proxy
-        request = ManagerRequest(type= ManagerRequest.RESPONSE,
-                                 operation_id= operation_id)
-        CTT.send_msg(request, self.socket)
+        request = Packet(Packet.MANAGER_RESPONSE, operation_id)
+        CTT.send_msg(request, self.socket, self.shared_cipher_key, self.shared_hmac_key)
 
         # Esperar pela resposta do proxy
-        response = CTT.recv_msg(self.socket)
+        response = CTT.recv_msg(self.socket, self.shared_cipher_key, self.shared_hmac_key)
 
-        if response.type == ProxyResponse.REQUEST_RESULT_FAIL:
+        if response.type == Packet.PROXY_RESPONSE_FAIL:
             print(f'[ERROR] {response.data}')
-        elif response.type == ProxyResponse.REQUEST_RESULT:
+        elif response.type == Packet.PROXY_RESPONSE:
             operation_entry = response.data
             print(str(operation_entry))
-
 
     # Processa o pedido do manager para executar um get request
     def process_get_request(self):
@@ -68,16 +68,13 @@ class Manager:
         community_string = input('Insira a community string: ')
 
         # Enviar pedido para o proxy
-        request = ManagerRequest(type= ManagerRequest.GET_REQUEST,
-                                 target_ip= target_ip,
-                                 oids= oids,
-                                 community_string= community_string)
-        CTT.send_msg(request, self.socket)
+        request = Packet(Packet.MANAGER_GET_REQUEST, { 'target_ip': target_ip, 'oids': oids, 'community_string': community_string })
+        CTT.send_msg(request, self.socket, self.shared_cipher_key, self.shared_hmac_key)
 
         # Esperar pelos ACKs vindos do proxy, que indicam o ID de cada operação executada
         for _ in range(len(oids)):
-            ack = CTT.recv_msg(self.socket)
-            if (ack.type == ProxyResponse.REQUEST_ACK):
+            ack = CTT.recv_msg(self.socket, self.shared_cipher_key, self.shared_hmac_key)
+            if (ack.type == Packet.PROXY_REQUEST_ACK):
                 self.operations.append(ack.data)
                 print(f'Recebido ACK da operação com ID: {ack.data}')
 
@@ -91,23 +88,20 @@ class Manager:
         community_string = input('Insira a community string: ')
 
         # Enviar pedido para o proxy
-        request = ManagerRequest(type= ManagerRequest.GETNEXT_REQUEST,
-                                 target_ip= target_ip,
-                                 oids= oids,
-                                 community_string= community_string)
-        CTT.send_msg(request, self.socket)
+        request = Packet(Packet.MANAGER_GETNEXT_REQUEST, { 'target_ip': target_ip, 'oids': oids, 'community_string': community_string })
+        CTT.send_msg(request, self.socket, self.shared_cipher_key, self.shared_hmac_key)
 
         # Esperar pelos ACKs vindos do proxy, que indicam o ID de cada operação executada
         for _ in range(len(oids)):
-            ack = CTT.recv_msg(self.socket)
-            if (ack.type == ProxyResponse.REQUEST_ACK):
+            ack = CTT.recv_msg(self.socket, self.shared_cipher_key, self.shared_hmac_key)
+            if (ack.type == Packet.PROXY_REQUEST_ACK):
                 self.operations.append(ack.data)
                 print(f'Recebido ACK da operação com ID: {ack.data}')
 
     # Processa o pedido do manager para se desconectar do proxy
     def process_disconnect(self):
-        request = ManagerRequest(type= ManagerRequest.DISCONNECT)
-        CTT.send_msg(request, self.socket)
+        request = Packet(Packet.MANAGER_DISCONNECT)
+        CTT.send_msg(request, self.socket, self.shared_cipher_key, self.shared_hmac_key)
         
         self.socket.close()
 
@@ -118,7 +112,11 @@ class Manager:
         try:
             # Estabelecer conexão com o proxy
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((self.SERVER_IP, self.SERVER_PORT))
+            self.socket.connect((self.PROXY_IP, self.PROXY_PORT))
+
+            # Troca de chaves Diffie-Hellman com o proxy
+            self.shared_cipher_key = encryption.dh_key_exchange(self.socket)
+            self.shared_hmac_key = encryption.dh_key_exchange(self.socket)
 
             # Menu principal
             while True:
