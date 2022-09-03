@@ -1,5 +1,6 @@
+from logging import exception
 from pysnmp import hlapi
-
+from pysnmp.smi import error
 from mibsec import MIBSec
 
 class SnmpRequester:
@@ -32,14 +33,18 @@ class SnmpRequester:
 # O handler deve ser o resultado de um pedido com apenas um OID
 def _fetch_get(handler):
     # Obter primeiro objeto do iterador
-    error_indication, error_status, error_index, var_binds =  next(handler)
+    try:
+        error_indication, error_status, error_index, var_binds =  next(handler)
 
-    # Verificar se houve erros no pedido get
-    if not error_indication and not error_status:
-        result = _cast(var_binds[0][1])
-    else:
-        result = (f'Got SNMP error \'{error_indication}\'', MIBSec.TYPEARG_STR)
-                    
+        # Verificar se houve erros no pedido get
+        if not error_indication and not error_status:
+            result = _cast(var_binds[0][1])
+        else:
+            result = (f'Got SNMP error \'{error_indication}\'', MIBSec.TYPEARG_STR)
+
+    except Exception as e:
+        result = (str(e), MIBSec.TYPEARG_STR)
+
     return result
 
 # Recebe um valor e tenta dar cast para um inteiro ou uma string

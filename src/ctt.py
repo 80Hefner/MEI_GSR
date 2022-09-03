@@ -1,37 +1,41 @@
-import socket
 import pickle
+import encryption
 
-class ProxyResponse:
+class Packet:
 
-    REQUEST_ACK = 1
-    REQUEST_RESULT = 2
-    REQUEST_RESULT_FAIL = 3
+    MANAGER_RESPONSE        = 11   # data: Operation ID -> int
+    MANAGER_GET_REQUEST     = 12   # data: { 'target_ip': String
+                                   #         'oids': [String]
+                                   #         'community_string': String }
+    MANAGER_GETNEXT_REQUEST = 13   # data: { 'target_ip': String
+                                   #         'oids': [String]
+                                   #         'community_string': String }
+    MANAGER_DISCONNECT      = 14   # data: None
 
-    def __init__(self, type, data):
+    PROXY_REQUEST_ACK       = 21   # data: Operation ID -> int
+    PROXY_RESPONSE          = 22   # data: Result -> OperationEntryValue
+    PROXY_RESPONSE_FAIL     = 23   # data: Error Message -> String
+
+    def __init__(self, type, data=None):
         self.type = type
         self.data = data
 
-class ManagerRequest:
-
-    RESPONSE = 1
-    GET_REQUEST = 2
-    GETNEXT_REQUEST = 3
-    DISCONNECT = 0
-
-    def __init__(self, type, target_ip = '', oids = [], community_string = '', operation_id = 0):
-        self.type = type
-        self.target_ip = target_ip
-        self.oids = oids
-        self.community_string = community_string
-        self.operation_id = operation_id
-
 class CTT:
+
+    # TODO tornar possível instanciar esta classe e guardar o socket e as keys nela
     
     HEADER_SIZE = 8
+    AUTENTICATED_HEADER_SIZE = 40  # 8 + 32  ->  HEADER + HMAC SHA256
     BUFFER_SIZE = 1024
     
     # Envia a mensagem através do socket, anexando-lhe um cabeçalho que indica o seu tamanho
-    def send_msg(msg, socket):
+    # Opcionalmente pode cifrar e autenticar a mensagem
+    def send_msg(msg, socket, cipher_key=None, hmac_key=None, encrypted=True):
+        
+        # Cifrar mensagem, caso a opção 'encrypted' seja selecionada
+        if encrypted:
+            msg = encryption.encrypt(msg, cipher_key, hmac_key)
+
         # Transformar mensagem num array de bytes
         msg_bytes = CTT.serialize(msg)
 
@@ -39,13 +43,32 @@ class CTT:
         msg_len = len(msg_bytes)
         header = msg_len.to_bytes(CTT.HEADER_SIZE, 'big')
 
-        # Enviar cabeçalho + array de bytes contendo a mensagem
-        socket.sendall(header + msg_bytes)
-    
+        # Autenticar o cabeçalho, caso a opção 'encrypted' seja selecionada
+        if encrypted:
+            header = header + encryption.generate_HMAC(header, hmac_key)
+        
+        # Enviar o cabeçalho
+        socket.sendall(header)
+
+        # Enviar mensagem
+        socket.sendall(msg_bytes)
+        
     # Recebe uma mensagem através do socket
-    def recv_msg(socket):
+    # Opcionalmente pode decifrar e verificar a autenticação da mensagem
+    def recv_msg(socket, cipher_key=None, hmac_key=None, encrypted=True):
+        
         # Receber cabeçalho que indica o tamanho da mensagem a receber
-        header = socket.recv(CTT.HEADER_SIZE)
+        # Verificar autenticação do cabeçalho, caso a opção 'encrypted' seja selecionada
+        if encrypted:
+            full_header = socket.recv(CTT.AUTENTICATED_HEADER_SIZE)
+            header = full_header[:8]
+            header_hmac = full_header[8:]
+
+            if encryption.generate_HMAC(header, hmac_key) != header_hmac:
+                raise encryption.HMACAuthenticationFailed('HMAC Authentication failed when verifying message header.')
+        else:
+            header = socket.recv(CTT.HEADER_SIZE)
+        
         msg_len = int.from_bytes(header, 'big')
 
         # Ler do socket enquanto a mensagem não foi totalmente recebida
@@ -61,9 +84,15 @@ class CTT:
                 recv_bytes += CTT.BUFFER_SIZE
 
             msg += buffer
+
+        # Desserializar a mensagem
+        msg = CTT.deserialize(msg)
         
-        # Retornar a mensagem desserializada
-        return CTT.deserialize(msg)
+        # Decifrar mensagem, caso a opção 'encrypted' seja selecionada
+        if encrypted:
+            msg = encryption.decrypt(msg, cipher_key, hmac_key)
+
+        return msg
 
     # Transforma um objeto num array de bytes
     def serialize(object):
