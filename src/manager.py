@@ -8,8 +8,6 @@ class Manager:
         self.PROXY_IP = '10.0.1.20'
         self.PROXY_PORT = 65432
         self.ctt = CTT()
-        #TODO guardar mais informação nas operations
-        self.operations = []
     
     # Apresenta o menu e recebe o input do manager
     def menu(self):
@@ -73,7 +71,6 @@ class Manager:
         for _ in range(len(oids)):
             ack = self.ctt.recv_msg()
             if (ack.type == Packet.PROXY_REQUEST_ACK):
-                self.operations.append(ack.data)
                 print(f'Recebido ACK da operação com ID: {ack.data}')
 
 
@@ -93,7 +90,6 @@ class Manager:
         for _ in range(len(oids)):
             ack = self.ctt.recv_msg()
             if (ack.type == Packet.PROXY_REQUEST_ACK):
-                self.operations.append(ack.data)
                 print(f'Recebido ACK da operação com ID: {ack.data}')
 
     # Processa o pedido do manager para se desconectar do proxy
