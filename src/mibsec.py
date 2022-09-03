@@ -1,6 +1,6 @@
+from threading import Lock
 
 class MIBSec:
-    #TODO implementar locks e assim
 
     TYPEARG_NONE = 0
     TYPEARG_INT = 1
@@ -11,19 +11,24 @@ class MIBSec:
 
     def __init__(self, operations_dict={}):
         self.operations_dict = operations_dict
+        self.operations_dict_lock = Lock()
 
     def new_operation(self, idOper, typeOper, idSrc, idDest, oidArg):
         operation_entry_value = OperationEntryValue(typeOper, idSrc, idDest, oidArg)
-        self.operations_dict[idOper] = operation_entry_value
+        with self.operations_dict_lock:
+            self.operations_dict[idOper] = operation_entry_value
     
     def update_operation(self, idOper, valueArg, typeArg, sizeArg):
-        operation_entry_value = self.operations_dict[idOper]
+        with self.operations_dict_lock:
+            operation_entry_value = self.operations_dict[idOper]
+            
         operation_entry_value.valueArg = valueArg
         operation_entry_value.typeArg = typeArg
         operation_entry_value.sizeArg = sizeArg
     
     def get_operation(self, idOper):
-        return self.operations_dict.get(idOper, None)
+        with self.operations_dict_lock:
+            return self.operations_dict.get(idOper, None)
     
 class OperationEntryValue:
 
