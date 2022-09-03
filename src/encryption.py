@@ -73,16 +73,16 @@ def decrypt(package, cipher_key, hmac_key):
 
 # Executa a troca de chaves Diffie-Hellman entre o proxy e um manager
 # É usada tanto para a troca de chaves de cifragem como de chaves de autenticação
-def dh_key_exchange(socket):
+def dh_key_exchange(ctt):
 
     # Gerar chave privada
     private_key = dh_parameters.generate_private_key()
 
     # Enviar e receber as chaves públicas
-    ctt.CTT.send_msg(private_key.public_key().public_bytes(encoding= serialization.Encoding.PEM,
-                                                        format= serialization.PublicFormat.SubjectPublicKeyInfo),
-                    socket, encrypted= False)
-    received_public_key = load_pem_public_key(ctt.CTT.recv_msg(socket, encrypted= False))
+    ctt.send_msg(private_key.public_key().public_bytes(encoding= serialization.Encoding.PEM,
+                                                       format= serialization.PublicFormat.SubjectPublicKeyInfo),
+                 encrypted= False)
+    received_public_key = load_pem_public_key(ctt.recv_msg(encrypted= False))
 
     # Gerar chave partilhada
     key = private_key.exchange(received_public_key)
