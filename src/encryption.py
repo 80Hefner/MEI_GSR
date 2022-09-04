@@ -1,11 +1,13 @@
 import secrets
-import ctt
+from typing import Any, Dict
 from pickle import dumps, loads
 from cryptography.hazmat.primitives import hmac, hashes, serialization
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from cryptography.hazmat.primitives.asymmetric import dh
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+from ctt import CTT
 
 # Exceção lançada quando a autenticação HMAC de uma mensagem falha
 class HMACAuthenticationFailed(Exception):
@@ -18,7 +20,7 @@ dh_params_numbers = dh.DHParameterNumbers(p,g)
 dh_parameters = dh_params_numbers.parameters()
 
 # Gera o valor de autenticação de uma mensagem, através duma chave de autenticação
-def generate_HMAC(message, hmac_key):
+def generate_HMAC(message: Any, hmac_key: bytes):
 
     h = hmac.HMAC(hmac_key, hashes.SHA256())
     h.update(dumps(message))
@@ -26,7 +28,7 @@ def generate_HMAC(message, hmac_key):
     return h.finalize()
 
 # Cifra e autentica um objeto, através da chave de cifragem e da chave de autenticação
-def encrypt(plain_object, cipher_key, hmac_key):
+def encrypt(plain_object: Any, cipher_key: bytes, hmac_key: bytes):
 
     # Gerar um valor pseudo-aleatório para ser usado como nounce
     nounce = secrets.token_bytes(16)
@@ -47,7 +49,7 @@ def encrypt(plain_object, cipher_key, hmac_key):
 
 
 # Decifra uma mensagem, através da chave de cifragem e da chave de autenticação
-def decrypt(package, cipher_key, hmac_key):
+def decrypt(package: Dict[str, Any], cipher_key: bytes, hmac_key: bytes):
 
     # Obter mensagem recebida e valor de autenticação HMAC
     message = package['message']
@@ -73,7 +75,7 @@ def decrypt(package, cipher_key, hmac_key):
 
 # Executa a troca de chaves Diffie-Hellman entre o proxy e um manager
 # É usada tanto para a troca de chaves de cifragem como de chaves de autenticação
-def dh_key_exchange(ctt):
+def dh_key_exchange(ctt: CTT):
 
     # Gerar chave privada
     private_key = dh_parameters.generate_private_key()

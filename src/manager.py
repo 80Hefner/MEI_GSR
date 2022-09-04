@@ -1,6 +1,7 @@
 import socket
+
 import encryption
-from ctt import CTT, Packet
+from ctt import CTT, Packet, Packet_Type
 
 class Manager:
 
@@ -43,15 +44,15 @@ class Manager:
                 print('[ERROR] Input inválido. Insira um número inteiro.')
         
         # Enviar pedido para o proxy
-        request = Packet(Packet.MANAGER_RESPONSE, operation_id)
+        request = Packet(Packet_Type.MANAGER_RESPONSE, operation_id)
         self.ctt.send_msg(request)
 
         # Esperar pela resposta do proxy
         response = self.ctt.recv_msg()
 
-        if response.type == Packet.PROXY_RESPONSE_FAIL:
+        if response.type == Packet_Type.PROXY_RESPONSE_FAIL:
             print(f'[ERROR] {response.data}')
-        elif response.type == Packet.PROXY_RESPONSE:
+        elif response.type == Packet_Type.PROXY_RESPONSE:
             operation_entry = response.data
             print(str(operation_entry))
 
@@ -64,13 +65,13 @@ class Manager:
         community_string = input('Insira a community string: ')
 
         # Enviar pedido para o proxy
-        request = Packet(Packet.MANAGER_GET_REQUEST, { 'target_ip': target_ip, 'oids': oids, 'community_string': community_string })
+        request = Packet(Packet_Type.MANAGER_GET_REQUEST, { 'target_ip': target_ip, 'oids': oids, 'community_string': community_string })
         self.ctt.send_msg(request)
 
         # Esperar pelos ACKs vindos do proxy, que indicam o ID de cada operação executada
         for _ in range(len(oids)):
             ack = self.ctt.recv_msg()
-            if (ack.type == Packet.PROXY_REQUEST_ACK):
+            if (ack.type == Packet_Type.PROXY_REQUEST_ACK):
                 print(f'Recebido ACK da operação com ID: {ack.data}')
 
 
@@ -83,18 +84,18 @@ class Manager:
         community_string = input('Insira a community string: ')
 
         # Enviar pedido para o proxy
-        request = Packet(Packet.MANAGER_GETNEXT_REQUEST, { 'target_ip': target_ip, 'oids': oids, 'community_string': community_string })
+        request = Packet(Packet_Type.MANAGER_GETNEXT_REQUEST, { 'target_ip': target_ip, 'oids': oids, 'community_string': community_string })
         self.ctt.send_msg(request)
 
         # Esperar pelos ACKs vindos do proxy, que indicam o ID de cada operação executada
         for _ in range(len(oids)):
             ack = self.ctt.recv_msg()
-            if (ack.type == Packet.PROXY_REQUEST_ACK):
+            if (ack.type == Packet_Type.PROXY_REQUEST_ACK):
                 print(f'Recebido ACK da operação com ID: {ack.data}')
 
     # Processa o pedido do manager para se desconectar do proxy
     def process_disconnect(self):
-        request = Packet(Packet.MANAGER_DISCONNECT)
+        request = Packet(Packet_Type.MANAGER_DISCONNECT)
         self.ctt.send_msg(request)
         
         self.ctt.socket.close()

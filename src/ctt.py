@@ -1,8 +1,11 @@
 import pickle
+import socket
+from enum import Enum
+from typing import Any
+
 import encryption
 
-class Packet:
-
+class Packet_Type(Enum):
     MANAGER_RESPONSE        = 11   # data: Operation ID -> int
     MANAGER_GET_REQUEST     = 12   # data: { 'target_ip': String
                                    #         'oids': [String]
@@ -16,7 +19,8 @@ class Packet:
     PROXY_RESPONSE          = 22   # data: Result -> OperationEntryValue
     PROXY_RESPONSE_FAIL     = 23   # data: Error Message -> String
 
-    def __init__(self, type, data=None):
+class Packet:
+    def __init__(self, type: Packet_Type, data: Any = None):
         self.type = type
         self.data = data
 
@@ -26,14 +30,14 @@ class CTT:
     AUTENTICATED_HEADER_SIZE = 40  # 8 + 32  ->  HEADER + HMAC SHA256
     BUFFER_SIZE = 1024
 
-    def __init__(self, socket=None, cipher_key=None, hmac_key=None):
+    def __init__(self, socket: socket.socket = None, cipher_key: bytes = None, hmac_key: bytes = None):
         self.socket = socket
         self.cipher_key = cipher_key
         self.hmac_key = hmac_key
     
     # Envia a mensagem através do socket, anexando-lhe um cabeçalho que indica o seu tamanho
     # Opcionalmente pode cifrar e autenticar a mensagem
-    def send_msg(self, msg, encrypted=True):
+    def send_msg(self, msg: Any, encrypted: bool = True):
         
         # Cifrar mensagem, caso a opção 'encrypted' seja selecionada
         if encrypted:
@@ -58,7 +62,7 @@ class CTT:
         
     # Recebe uma mensagem através do socket
     # Opcionalmente pode decifrar e verificar a autenticação da mensagem
-    def recv_msg(self, encrypted=True):
+    def recv_msg(self, encrypted: bool = True):
         
         # Receber cabeçalho que indica o tamanho da mensagem a receber
         # Verificar autenticação do cabeçalho, caso a opção 'encrypted' seja selecionada
@@ -98,9 +102,9 @@ class CTT:
         return msg
 
     # Transforma um objeto num array de bytes
-    def serialize(object):
+    def serialize(object: Any):
         return pickle.dumps(object)
     
     # Transforma um array de bytes num objeto
-    def deserialize(object_bytes):
+    def deserialize(object_bytes: bytes):
         return pickle.loads(object_bytes)
