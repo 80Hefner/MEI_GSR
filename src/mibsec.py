@@ -50,14 +50,22 @@ class OperationEntryValue:
 
 class MIBSec:
 
-    def __init__(self, operations_dict: Dict[int, OperationEntryValue]={}):
+    def __init__(self, operations_dict: Dict[int, OperationEntryValue] = {}):
         self.operations_dict = operations_dict
         self.operations_dict_lock = Lock()
+        self.operation_id_counter = 0
+        self.operation_id_counter_lock = Lock()
 
-    def new_operation(self, idOper: int, typeOper: MIBSec_TypeOper, idSrc: str, idDest: str, oidArg: str):
+    def new_operation(self, typeOper: MIBSec_TypeOper, idSrc: str, idDest: str, oidArg: str):
+        with self.operation_id_counter_lock:
+            idOper = self.operation_id_counter
+            self.operation_id_counter += 1
+
         operation_entry_value = OperationEntryValue(typeOper, idSrc, idDest, oidArg)
         with self.operations_dict_lock:
             self.operations_dict[idOper] = operation_entry_value
+        
+        return idOper
     
     def update_operation(self, idOper: int, valueArg: Any, typeArg: MIBSec_TypeArg, sizeArg: int):
         with self.operations_dict_lock:

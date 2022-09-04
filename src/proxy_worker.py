@@ -8,17 +8,6 @@ import snmp_requester
 from ctt import CTT, Packet, Packet_Type
 from mibsec import MIBSec, MIBSec_TypeOper
 
-# TODO passar como argumento do proxy worker
-class Counter:
-    count = 0
-    lock = Lock()
-
-    def get_count():
-        with Counter.lock:
-            ret = Counter.count
-            Counter.count += 1
-        return ret
-
 class ProxyWorker(Thread):
 
     def __init__(self, socket: socket.socket, addr: Tuple[str, int], mib_sec: MIBSec):
@@ -57,9 +46,8 @@ class ProxyWorker(Thread):
         for oid in oids:
             
             # Inserir operação na MIBSec
-            idOper = Counter.get_count()
             idSrc = self.addr[0]
-            self.mib_sec.new_operation(idOper, MIBSec_TypeOper.GET, idSrc, target_ip, oid)
+            idOper = self.mib_sec.new_operation(MIBSec_TypeOper.GET, idSrc, target_ip, oid)
 
             # Informar manager qual o ID da operação
             self.ctt.send_msg(Packet(Packet_Type.PROXY_REQUEST_ACK, idOper))
@@ -83,9 +71,8 @@ class ProxyWorker(Thread):
         for oid in oids:
             
             # Inserir operação na MIBSec
-            idOper = Counter.get_count()
             idSrc = self.addr[0]
-            self.mib_sec.new_operation(idOper, MIBSec_TypeOper.GETNEXT, idSrc, target_ip, oid)
+            idOper = self.mib_sec.new_operation(MIBSec_TypeOper.GETNEXT, idSrc, target_ip, oid)
 
             # Informar manager qual o ID da operação
             self.ctt.send_msg(Packet(Packet_Type.PROXY_REQUEST_ACK, idOper))
