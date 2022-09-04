@@ -3,35 +3,33 @@ from typing import Any, Iterable, Tuple
 
 from mibsec import MIBSec_TypeArg
 
-class SnmpRequester:
+# Faz um pedido get para um objeto na MIB, indicando o IP ou nome do dispositivo remoto,
+# o OID requisitado e a Community String
+def get_request(target: str, oid: str, credentials: str, port: int = 161,
+                engine: hlapi.SnmpEngine = hlapi.SnmpEngine(),
+                context: hlapi.ContextData = hlapi.ContextData()):
+    handler = hlapi.getCmd(
+        engine,
+        hlapi.CommunityData(credentials),
+        hlapi.UdpTransportTarget((target, port)),
+        context,
+        hlapi.ObjectType(hlapi.ObjectIdentity(oid))
+    )
+    return _fetch_get(handler)
 
-    # Faz um pedido get para um objeto na MIB, indicando o IP ou nome do dispositivo remoto,
-    # o OID requisitado e a Community String
-    def get_request(target: str, oid: str, credentials: str, port: int = 161,
-                    engine: hlapi.SnmpEngine = hlapi.SnmpEngine(),
-                    context: hlapi.ContextData = hlapi.ContextData()):
-        handler = hlapi.getCmd(
-            engine,
-            hlapi.CommunityData(credentials),
-            hlapi.UdpTransportTarget((target, port)),
-            context,
-            hlapi.ObjectType(hlapi.ObjectIdentity(oid))
-        )
-        return _fetch_get(handler)
-
-    # Faz um pedido get next para um objeto na MIB, indicando o IP ou nome do dispositivo remoto,
-    # o OID requisitado e a Community String
-    def get_next_request(target: str, oid: str, credentials: str, port: int = 161,
-                         engine: hlapi.SnmpEngine = hlapi.SnmpEngine(),
-                         context: hlapi.ContextData = hlapi.ContextData()):
-        handler = hlapi.nextCmd(
-            engine,
-            hlapi.CommunityData(credentials),
-            hlapi.UdpTransportTarget((target, port)),
-            context,
-            hlapi.ObjectType(hlapi.ObjectIdentity(oid))
-        )
-        return _fetch_get(handler)
+# Faz um pedido get next para um objeto na MIB, indicando o IP ou nome do dispositivo remoto,
+# o OID requisitado e a Community String
+def get_next_request(target: str, oid: str, credentials: str, port: int = 161,
+                        engine: hlapi.SnmpEngine = hlapi.SnmpEngine(),
+                        context: hlapi.ContextData = hlapi.ContextData()):
+    handler = hlapi.nextCmd(
+        engine,
+        hlapi.CommunityData(credentials),
+        hlapi.UdpTransportTarget((target, port)),
+        context,
+        hlapi.ObjectType(hlapi.ObjectIdentity(oid))
+    )
+    return _fetch_get(handler)
 
 # Obtém o primeiro objeto do handler e retorna o resultado do pedido
 # O handler deve ser o resultado de um pedido com apenas um OID

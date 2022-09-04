@@ -4,9 +4,9 @@ from typing import List, Tuple
 from threading import Thread, Lock
 
 import encryption
+import snmp_requester
 from ctt import CTT, Packet, Packet_Type
 from mibsec import MIBSec, MIBSec_TypeOper
-from snmp_requester import SnmpRequester
 
 # TODO passar como argumento do proxy worker
 class Counter:
@@ -65,7 +65,7 @@ class ProxyWorker(Thread):
             self.ctt.send_msg(Packet(Packet_Type.PROXY_REQUEST_ACK, idOper))
 
             # Executar operação no agente remoto
-            (valueArg, typeArg) = SnmpRequester.get_request(target_ip, oid, community_string)
+            (valueArg, typeArg) = snmp_requester.get_request(target_ip, oid, community_string)
             
             # Guardar resultado da operação na MIBSec
             self.mib_sec.update_operation(idOper, valueArg, typeArg, sys.getsizeof(valueArg))
@@ -91,7 +91,7 @@ class ProxyWorker(Thread):
             self.ctt.send_msg(Packet(Packet_Type.PROXY_REQUEST_ACK, idOper))
 
             # Executar operação no agente remoto
-            (valueArg, typeArg) = SnmpRequester.get_next_request(target_ip, oid, community_string)
+            (valueArg, typeArg) = snmp_requester.get_next_request(target_ip, oid, community_string)
             
             # Guardar resultado da operação na MIBSec
             self.mib_sec.update_operation(idOper, valueArg, typeArg, sys.getsizeof(valueArg))
