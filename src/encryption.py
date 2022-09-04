@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from ctt import CTT
 
 # Exceção lançada quando a autenticação HMAC de uma mensagem falha
-class HMACAuthenticationFailed(Exception):
+class HMACAuthenticationFailedException(Exception):
     pass
 
 # RFC 3526 - Group 14
@@ -58,7 +58,7 @@ def decrypt(package: Dict[str, Any], cipher_key: bytes, hmac_key: bytes):
     # Autenticar mensagem recebida com HMAC
     calculated_hmac = generate_HMAC(message, hmac_key)
     if (hmac_auth != calculated_hmac):
-        raise HMACAuthenticationFailed('HMAC Authentication failed when decrypting a message.')
+        raise HMACAuthenticationFailedException('HMAC Authentication failed when decrypting a message.')
     
     # Parsing da mensagem recebida
     nounce = message['nounce']

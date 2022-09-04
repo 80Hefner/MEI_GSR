@@ -33,10 +33,10 @@ def get_next_request(target: str, oid: str, credentials: str, port: int = 161,
 
 # Obtém o primeiro objeto do handler e retorna o resultado do pedido
 # O handler deve ser o resultado de um pedido com apenas um OID
-def _fetch_get(handler: Iterable) -> Tuple[Any, MIBSec_TypeArg]:
+def _fetch_get(handler) -> Tuple[Any, MIBSec_TypeArg]:
     # Obter primeiro objeto do iterador
     try:
-        error_indication, error_status, error_index, var_binds =  next(handler)
+        error_indication, error_status, error_index, var_binds = next(handler)
 
         # Verificar se houve erros no pedido get
         if not error_indication and not error_status:

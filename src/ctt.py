@@ -72,7 +72,7 @@ class CTT:
             header_hmac = full_header[8:]
 
             if encryption.generate_HMAC(header, self.hmac_key) != header_hmac:
-                raise encryption.HMACAuthenticationFailed('HMAC Authentication failed when verifying message header.')
+                raise encryption.HMACAuthenticationFailedException('HMAC Authentication failed when verifying message header.')
         else:
             header = self.socket.recv(CTT.HEADER_SIZE)
         
@@ -102,9 +102,11 @@ class CTT:
         return msg
 
     # Transforma um objeto num array de bytes
+    @staticmethod
     def serialize(object: Any):
         return pickle.dumps(object)
     
     # Transforma um array de bytes num objeto
+    @staticmethod
     def deserialize(object_bytes: bytes):
         return pickle.loads(object_bytes)
