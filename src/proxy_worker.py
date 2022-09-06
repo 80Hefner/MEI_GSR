@@ -33,7 +33,6 @@ class ProxyWorker(Thread):
         response = Packet(Packet_Type.PROXY_RESPONSE, operation_entry)
         self.ctt.send_msg(response)
 
-    #TODO juntar get com getnext?
     # Processa um pedido do manager para executar um get request
     def process_get_request(self, manager_req: Packet):
 
@@ -57,7 +56,6 @@ class ProxyWorker(Thread):
             
             # Guardar resultado da operação na MIBSec
             self.mib_sec.update_operation(idOper, valueArg, typeArg, sys.getsizeof(valueArg))
-
 
     # Processa um pedido do manager para executar um get next request
     def process_get_next_request(self, manager_req: Packet):

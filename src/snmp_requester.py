@@ -65,25 +65,3 @@ def _cast(value: Any) -> Tuple[Any, MIBSec_TypeArg]:
             return (str_value, MIBSec_TypeArg.STR)
         except (ValueError, TypeError):
             return (value, MIBSec_TypeArg.NONE)
-
-
-# Itera sobre um handler e retorna os resultados da subtree do primeiro OID
-def _fetch_walk(handler, root_oid):
-    # Lista de tuplos resultante. Cada tuplo associa um OID ao seu valor na MIB
-    result = []
-
-    for error_indication, error_status, error_index, var_binds in handler:
-
-        if not error_indication and not error_status:
-
-            if (not str(var_binds[0][0]).startswith(root_oid)):
-                break
-            
-            oid = str(var_binds[0][0])
-            oid_value = str(var_binds[0][1])
-            result.append((oid, oid_value))
-
-        else:
-            raise RuntimeError('Got SNMP error \'{0}\''.format(error_indication))
-
-    return result
