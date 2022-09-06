@@ -61,7 +61,6 @@ def decrypt(message: Dict[str, Any], key: bytes):
     return loads(object_bytes)
 
 # Executa a troca de chaves Diffie-Hellman entre o proxy e um manager
-# É usada tanto para a troca de chaves de cifragem como de chaves de autenticação
 def dh_key_exchange(ctt: CTT):
 
     # Gerar chave privada
