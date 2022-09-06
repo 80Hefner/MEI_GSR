@@ -31,7 +31,7 @@ def generate_HMAC(message: Any, hmac_key: bytes):
 def encrypt(plain_object: Any, cipher_key: bytes, hmac_key: bytes):
 
     # Gerar um valor pseudo-aleatório para ser usado como nounce
-    nounce = secrets.token_bytes(16)
+    nounce = secrets.token_bytes(12)
 
     # Criar um Cipher AES-GCM a chave de cifragem e o nounce gerado
     encryptor = Cipher(algorithms.AES(cipher_key), modes.GCM(nounce)).encryptor()
@@ -46,7 +46,6 @@ def encrypt(plain_object: Any, cipher_key: bytes, hmac_key: bytes):
     hmac_auth = generate_HMAC(message, hmac_key)
 
     return { 'message': message, 'hmac_auth': hmac_auth }
-
 
 # Decifra uma mensagem, através da chave de cifragem e da chave de autenticação
 def decrypt(package: Dict[str, Any], cipher_key: bytes, hmac_key: bytes):

@@ -27,10 +27,10 @@ class Packet:
 class CTT:
 
     HEADER_SIZE = 8
-    AUTENTICATED_HEADER_SIZE = 40  # 8 + 32  ->  HEADER + HMAC SHA256
+    HMAC_SIZE = 32  # HMAC SHA256
     BUFFER_SIZE = 1024
 
-    def __init__(self, socket: socket.socket = None, cipher_key: bytes = None, hmac_key: bytes = None):
+    def __init__(self, socket: socket.socket, cipher_key: bytes = None, hmac_key: bytes = None):
         self.socket = socket
         self.cipher_key = cipher_key
         self.hmac_key = hmac_key
@@ -46,13 +46,16 @@ class CTT:
         # Transformar mensagem num array de bytes
         msg_bytes = CTT.serialize(msg)
 
-        # Calcular tamanho do array de bytes
+        # Calcular tamanho do array de bytes a ser enviado
         msg_len = len(msg_bytes)
+        if encrypted:
+            msg_len += CTT.HMAC_SIZE
         header = msg_len.to_bytes(CTT.HEADER_SIZE, 'big')
 
-        # Autenticar o cabeçalho, caso a opção 'encrypted' seja selecionada
+        # Autenticar o cabeçalho e a mensagem, caso a opção 'encrypted' seja selecionada
         if encrypted:
             header = header + encryption.generate_HMAC(header, self.hmac_key)
+            msg_bytes = msg_bytes + encryption.generate_HMAC(msg_bytes, self.hmac_key)
         
         # Enviar o cabeçalho
         self.socket.sendall(header)
@@ -67,22 +70,22 @@ class CTT:
         # Receber cabeçalho que indica o tamanho da mensagem a receber
         # Verificar autenticação do cabeçalho, caso a opção 'encrypted' seja selecionada
         if encrypted:
-            full_header = self.socket.recv(CTT.AUTENTICATED_HEADER_SIZE)
-            header = full_header[:8]
-            header_hmac = full_header[8:]
+            full_header = self.socket.recv(CTT.HEADER_SIZE + CTT.HMAC_SIZE)
+            header = full_header[:CTT.HEADER_SIZE]
+            header_hmac = full_header[CTT.HEADER_SIZE:]
 
             if encryption.generate_HMAC(header, self.hmac_key) != header_hmac:
                 raise encryption.HMACAuthenticationFailedException('HMAC Authentication failed when verifying message header.')
         else:
             header = self.socket.recv(CTT.HEADER_SIZE)
         
-        msg_len = int.from_bytes(header, 'big')
+        full_msg_len = int.from_bytes(header, 'big')
 
         # Ler do socket enquanto a mensagem não foi totalmente recebida
         recv_bytes = 0
-        msg = b''
-        while recv_bytes < msg_len:
-            bytes_left = msg_len - recv_bytes
+        full_msg = b''
+        while recv_bytes < full_msg_len:
+            bytes_left = full_msg_len - recv_bytes
             if (bytes_left < CTT.BUFFER_SIZE):
                 buffer = self.socket.recv(bytes_left)
                 recv_bytes += bytes_left
@@ -90,14 +93,21 @@ class CTT:
                 buffer = self.socket.recv(CTT.BUFFER_SIZE)
                 recv_bytes += CTT.BUFFER_SIZE
 
-            msg += buffer
+            full_msg += buffer
 
-        # Desserializar a mensagem
-        msg = CTT.deserialize(msg)
-        
-        # Decifrar mensagem, caso a opção 'encrypted' seja selecionada
+        # Verificar autenticação da mensagem e decifrá-la, caso a opção 'encrypted' seja selecionada
         if encrypted:
+            msg = full_msg[:-CTT.HMAC_SIZE]
+            msg_hmac = full_msg[-CTT.HMAC_SIZE:]
+
+            if encryption.generate_HMAC(msg, self.hmac_key) != msg_hmac:
+                raise encryption.HMACAuthenticationFailedException('HMAC Authentication failed when verifying message.')
+
+            msg = CTT.deserialize(msg)
             msg = encryption.decrypt(msg, self.cipher_key, self.hmac_key)
+        # Desserializar a mensagem
+        else:
+            msg = CTT.deserialize(full_msg)
 
         return msg
 

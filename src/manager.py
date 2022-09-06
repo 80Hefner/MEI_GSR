@@ -5,7 +5,7 @@ from ctt import CTT, Packet, Packet_Type
 
 PROXY_IP = '10.0.1.20'
 PROXY_PORT = 65432
-ctt = CTT()
+ctt = CTT(None)
 
 # Apresenta o menu e recebe o input do manager
 def menu():
@@ -70,7 +70,6 @@ def process_get_request():
         ack = ctt.recv_msg()
         if (ack.type == Packet_Type.PROXY_REQUEST_ACK):
             print(f'Recebido ACK da operação com ID: {ack.data}')
-
 
 # Processa o pedido do manager para executar um getnext request
 def process_get_next_request():
