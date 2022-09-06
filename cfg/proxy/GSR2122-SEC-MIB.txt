@@ -285,7 +285,7 @@ gsr2122Events OBJECT IDENTIFIER
 	-- 1.3.6.1.4.101.2
 	::= { gsr2122 2 }
 
-gsr2122NotificationTrap NOTIFICATION-TYPE
+gsr2122NotificationEvent NOTIFICATION-TYPE
 	STATUS current
 	DESCRIPTION
 		"This is a notification event"
@@ -327,7 +327,7 @@ gsr2122BasicGroup OBJECT-GROUP
 
 gsr2122BasicEvents NOTIFICATION-GROUP
 	NOTIFICATIONS {
-		gsr2122NotificationTrap
+		gsr2122NotificationEvent
 	}
 	STATUS current
 	DESCRIPTION
