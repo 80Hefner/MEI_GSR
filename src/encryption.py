@@ -27,45 +27,33 @@ def generate_HMAC(message: Any, hmac_key: bytes):
 
     return h.finalize()
 
-# Cifra e autentica um objeto, através da chave de cifragem e da chave de autenticação
-def encrypt(plain_object: Any, cipher_key: bytes, hmac_key: bytes):
+# Cifra e autentica um objeto, através da chave de cifragem
+def encrypt(plain_object: Any, key: bytes):
 
-    # Gerar um valor pseudo-aleatório para ser usado como nounce
-    nounce = secrets.token_bytes(12)
+    # Gerar um vetor de inicialização aleatório
+    iv = secrets.token_bytes(12)
 
-    # Criar um Cipher AES-GCM a chave de cifragem e o nounce gerado
-    encryptor = Cipher(algorithms.AES(cipher_key), modes.GCM(nounce)).encryptor()
+    # Criar um Cipher AES-GCM a chave de cifragem e o vetor de inicialização gerado
+    encryptor = Cipher(algorithms.AES(key), modes.GCM(iv)).encryptor()
 
     # Cifrar o objeto
     cipher_object = encryptor.update(dumps(plain_object)) + encryptor.finalize()
 
     # Mensagem a ser enviada
-    message = { 'nounce': nounce, 'tag': encryptor.tag, 'cipher_object': cipher_object }
+    message = { 'iv': iv, 'tag': encryptor.tag, 'cipher_object': cipher_object }
 
-    # Gerar autenticação HMAC
-    hmac_auth = generate_HMAC(message, hmac_key)
+    return message
 
-    return { 'message': message, 'hmac_auth': hmac_auth }
-
-# Decifra uma mensagem, através da chave de cifragem e da chave de autenticação
-def decrypt(package: Dict[str, Any], cipher_key: bytes, hmac_key: bytes):
-
-    # Obter mensagem recebida e valor de autenticação HMAC
-    message = package['message']
-    hmac_auth = package['hmac_auth']
-
-    # Autenticar mensagem recebida com HMAC
-    calculated_hmac = generate_HMAC(message, hmac_key)
-    if (hmac_auth != calculated_hmac):
-        raise HMACAuthenticationFailedException('HMAC Authentication failed when decrypting a message.')
+# Decifra uma mensagem, através da chave de cifragem
+def decrypt(message: Dict[str, Any], key: bytes):
     
     # Parsing da mensagem recebida
-    nounce = message['nounce']
+    iv = message['iv']
     tag = message['tag']
     cipher_object = message['cipher_object']
 
     # Criar um Cipher AES-GCM a chave de cifragem, o nounce e a tag
-    decryptor = Cipher(algorithms.AES(cipher_key), modes.GCM(nounce, tag)).decryptor()
+    decryptor = Cipher(algorithms.AES(key), modes.GCM(iv, tag)).decryptor()
 
     # Obter objeto original
     object_bytes = decryptor.update(cipher_object) + decryptor.finalize()

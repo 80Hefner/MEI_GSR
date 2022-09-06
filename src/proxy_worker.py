@@ -86,8 +86,7 @@ class ProxyWorker(Thread):
     def run(self):
 
         # Troca de chaves Diffie-Hellman com o manager
-        self.ctt.cipher_key = encryption.dh_key_exchange(self.ctt)
-        self.ctt.hmac_key = encryption.dh_key_exchange(self.ctt)
+        self.ctt.shared_key = encryption.dh_key_exchange(self.ctt)
 
         try:
             while True:

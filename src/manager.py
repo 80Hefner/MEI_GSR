@@ -106,8 +106,7 @@ def run_manager():
         ctt.socket.connect((PROXY_IP, PROXY_PORT))
 
         # Troca de chaves Diffie-Hellman com o proxy
-        ctt.cipher_key = encryption.dh_key_exchange(ctt)
-        ctt.hmac_key = encryption.dh_key_exchange(ctt)
+        ctt.shared_key = encryption.dh_key_exchange(ctt)
 
         # Menu principal
         while True:
